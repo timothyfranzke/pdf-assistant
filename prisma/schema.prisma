@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String     @id @default(cuid())
+  name      String?
+  email     String     @unique
+  password  String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  documents Document[]
+  sessions  Session[]
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  expires      DateTime
+  sessionToken String   @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Document {
+  id            String         @id @default(cuid())
+  title         String
+  fileName      String
+  fileKey       String
+  fileSize      Int
+  pageCount     Int            @default(0)
+  uploadedAt    DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  userId        String
+  annotations   Annotation[]
+  conversations Conversation[]
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Annotation {
+  id         String   @id @default(cuid())
+  type       String
+  content    String?
+  pageNumber Int
+  position   Json
+  color      String   @default("#FFEB3B")
+  createdAt  DateTime @default(now())
+  documentId String
+  messageId  String?
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+}
+
+model Conversation {
+  id         String    @id @default(cuid())
+  title      String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  documentId String
+  document   Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  messages   Message[]
+}
+
+model Message {
+  id                 String       @id @default(cuid())
+  role               String
+  content            String
+  timestamp          DateTime     @default(now())
+  isVoiceMessage     Boolean      @default(false)
+  conversationId     String
+  referencePage      Int?
+  createdAnnotations Json?
+  conversation       Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+}
